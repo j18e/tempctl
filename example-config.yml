@@ -1,0 +1,18 @@
+users:
+- name: thor
+  mac: aa:bb:cc:dd:ee:ff # mac address of thor's phone
+- name: margrethe
+  mac: 11:22:33:44:55:66 # mac address of thor's phone
+rooms:
+- name: thor-sitt-rom
+  plug_address: 192.168.10.111 # ip address of smart plug
+  occupants: [thor]
+  target_temp: 22 # celcius
+  start_time: "09:00"
+  stop_time: "22:00"
+- name: kjøkkenet
+  plug_address: 192.168.10.112
+  occupants: [thor, margrethe]
+  target_temp: 21.5 # celcius
+  start_time: "08:00"
+  stop_time: "21:00"
