@@ -8,7 +8,7 @@ import (
 
 	"github.com/ghodss/yaml"
 	"github.com/j18e/tempctl/models"
-	"github.com/j18e/tempctl/room"
+	roompkg "github.com/j18e/tempctl/room"
 	"github.com/j18e/tempctl/storage"
 	log "github.com/sirupsen/logrus"
 )
@@ -68,18 +68,17 @@ func main() {
 	}
 }
 
-func checkRooms(rooms []*room.Room) {
+func checkRooms(rooms []*roompkg.Room) {
 	errChan := make(chan error, len(rooms))
 	defer close(errChan)
 	for _, room := range rooms {
-		go func() {
-			err := room.Check()
-			if err != nil {
+		go func(room *roompkg.Room) {
+			if err := room.Check(); err != nil {
 				errChan <- fmt.Errorf("checking %s: %w", room.Name, err)
 				return
 			}
 			errChan <- nil
-		}()
+		}(room)
 	}
 
 	for range rooms {
@@ -89,7 +88,7 @@ func checkRooms(rooms []*room.Room) {
 	}
 }
 
-func config(file string) ([]*room.Room, error) {
+func config(file string) ([]*roompkg.Room, error) {
 	const timeFormat = "15:04"
 
 	var conf struct {
@@ -104,7 +103,7 @@ func config(file string) ([]*room.Room, error) {
 		} `json:"rooms"`
 	}
 
-	var rooms []*room.Room
+	var rooms []*roompkg.Room
 
 	bs, err := ioutil.ReadFile(file)
 	if err != nil {
@@ -138,7 +137,7 @@ func config(file string) ([]*room.Room, error) {
 		}
 
 		// assemble room
-		room := room.Room{
+		room := roompkg.Room{
 			Name:       rc.Name,
 			Users:      users,
 			TargetTemp: rc.TargetTemp,
