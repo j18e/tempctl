@@ -18,6 +18,7 @@ func main() {
 	influxAddr := flag.String("influx.address", "", "address for the influxdb server")
 	influxDB := flag.String("influx.db", "", "influx database to use")
 	logLevel := flag.String("log.level", "info", "log level to use")
+	syncFreq := flag.Int("sync.frequency", 30, "time to wait between checks, in seconds (default 30)")
 
 	flag.Parse()
 
@@ -27,6 +28,8 @@ func main() {
 		log.Fatal("required flag -influx.address")
 	} else if *influxDB == "" {
 		log.Fatal("required flag -influx.db")
+	} else if *syncFreq < 1 || *syncFreq > 3600 {
+		log.Fatal("sync frequency must be between 1 and 3600")
 	}
 
 	switch *logLevel {
@@ -61,7 +64,7 @@ func main() {
 
 	for {
 		checkRooms(rooms)
-		time.Sleep(30 * time.Second)
+		time.Sleep(time.Duration(*syncFreq) * time.Second)
 	}
 }
 
