@@ -1,62 +1,63 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"time"
 
-	"github.com/ghodss/yaml"
 	"github.com/j18e/tempctl/models"
-	roompkg "github.com/j18e/tempctl/room"
+	"github.com/j18e/tempctl/room"
 	"github.com/j18e/tempctl/storage"
+
+	"github.com/ghodss/yaml"
+	"github.com/jessevdk/go-flags"
 	log "github.com/sirupsen/logrus"
 )
 
 func main() {
-	configFile := flag.String("config.file", "", "the config file to use")
-	influxAddr := flag.String("influx.address", "", "address for the influxdb server")
-	influxDB := flag.String("influx.db", "", "influx database to use")
-	logLevel := flag.String("log.level", "info", "log level to use")
-	syncFreq := flag.Int("sync.frequency", 30, "time to wait between checks, in seconds (default 30)")
-
-	flag.Parse()
-
-	if *configFile == "" {
-		log.Fatal("required flag -config.file")
-	} else if *influxAddr == "" {
-		log.Fatal("required flag -influx.address")
-	} else if *influxDB == "" {
-		log.Fatal("required flag -influx.db")
-	} else if *syncFreq < 1 || *syncFreq > 3600 {
-		log.Fatal("sync frequency must be between 1 and 3600")
+	var opts struct {
+		Config     string `long:"config.file" required:"true" description:"path to the config file"`
+		InfluxAddr string `long:"influx.address" required:"true" description:"influxdb server to connect to"`
+		InfluxDB   string `long:"influx.db" required:"true" description:"database on influxdb server to connect to"`
+		LogLevel   string `long:"log.level" default:"info" choice:"info" choice:"debug" description:"log level to use"`
+		SyncFreq   int    `long:"sync.frequency" default:"30" description:"time in seconds between checks"`
 	}
 
-	switch *logLevel {
+	_, err := flags.Parse(&opts)
+	if flags.WroteHelp(err) {
+		os.Exit(0) // exit with zero status if help was called
+	} else if _, ok := err.(*flags.Error); ok {
+		os.Exit(1) // if it's a flags.Error the output is already printed
+	} else if err != nil {
+		log.Fatal(err)
+	}
+
+	switch opts.LogLevel {
 	case "debug":
 		log.SetLevel(log.DebugLevel)
 	case "info":
 		log.SetLevel(log.InfoLevel)
 	default:
-		log.Fatalf("unknown log.level %s", *logLevel)
+		log.Fatalf("unknown log level %s", opts.LogLevel)
 	}
 
-	rooms, err := config(*configFile)
+	rooms, err := config(opts.Config)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	// connect to storage
-	stor, err := storage.NewInfluxStorage(*influxAddr, *influxDB)
+	stor, err := storage.NewInfluxStorage(opts.InfluxAddr, opts.InfluxDB)
 	if err != nil {
 		log.Fatalf("creating storage: %v", err)
 	}
 	defer stor.Close()
 
 	// initialize rooms
-	for _, room := range rooms {
-		room.Storage = stor
-		if err := room.Init(); err != nil {
+	for _, r := range rooms {
+		r.Storage = stor
+		if err := r.Init(); err != nil {
 			log.Fatal(err)
 		}
 	}
@@ -64,21 +65,21 @@ func main() {
 
 	for {
 		checkRooms(rooms)
-		time.Sleep(time.Duration(*syncFreq) * time.Second)
+		time.Sleep(time.Duration(opts.SyncFreq) * time.Second)
 	}
 }
 
-func checkRooms(rooms []*roompkg.Room) {
+func checkRooms(rooms []*room.Room) {
 	errChan := make(chan error, len(rooms))
 	defer close(errChan)
-	for _, room := range rooms {
-		go func(room *roompkg.Room) {
-			if err := room.Check(); err != nil {
-				errChan <- fmt.Errorf("checking %s: %w", room.Name, err)
+	for _, r := range rooms {
+		go func(r *room.Room) {
+			if err := r.Check(); err != nil {
+				errChan <- fmt.Errorf("checking %s: %w", r.Name, err)
 				return
 			}
 			errChan <- nil
-		}(room)
+		}(r)
 	}
 
 	for range rooms {
@@ -88,7 +89,7 @@ func checkRooms(rooms []*roompkg.Room) {
 	}
 }
 
-func config(file string) ([]*roompkg.Room, error) {
+func config(file string) ([]*room.Room, error) {
 	const timeFormat = "15:04"
 
 	var conf struct {
@@ -103,7 +104,7 @@ func config(file string) ([]*roompkg.Room, error) {
 		} `json:"rooms"`
 	}
 
-	var rooms []*roompkg.Room
+	var rooms []*room.Room
 
 	bs, err := ioutil.ReadFile(file)
 	if err != nil {
@@ -137,7 +138,7 @@ func config(file string) ([]*roompkg.Room, error) {
 		}
 
 		// assemble room
-		room := roompkg.Room{
+		r := room.Room{
 			Name:       rc.Name,
 			Users:      users,
 			TargetTemp: rc.TargetTemp,
@@ -145,7 +146,7 @@ func config(file string) ([]*roompkg.Room, error) {
 			StartTime:  startDur,
 			StopTime:   stopDur,
 		}
-		rooms = append(rooms, &room)
+		rooms = append(rooms, &r)
 	}
 
 	return rooms, nil

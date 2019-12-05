@@ -32,6 +32,8 @@ github.com/j18e/hs110 v0.0.0-20191112175551-a18968a69d60/go.mod h1:tbrmuwl6i9AVp
 github.com/j18e/unifi-exporter v0.0.0-20191112082528-5174b61082e7 h1:uGpR9buOk/C7ptHNih1yYgi6TSCBL7PoV6D7jkdSoD8=
 github.com/j18e/unifi-exporter/unifi v0.0.0-20191112082528-5174b61082e7 h1:Xz/hj3LPp2dAZIkLWhgvJ8atfAZJYLgh6e+QvNEDj4E=
 github.com/j18e/unifi-exporter/unifi v0.0.0-20191112082528-5174b61082e7/go.mod h1:fJPb3UTvlQRNBR3F52CeCSacWGO2GwM1nh2jd2wdgKU=
+github.com/jessevdk/go-flags v1.4.1-0.20181221193153-c0795c8afcf4 h1:xKkUL6QBojwguhKKetf1SocCAKqc6W7S/mGm9xEGllo=
+github.com/jessevdk/go-flags v1.4.1-0.20181221193153-c0795c8afcf4/go.mod h1:4FA24M0QyGHXBuZZK/XkWh8h0e1EYbRYJSGM75WSRxI=
 github.com/json-iterator/go v1.1.6/go.mod h1:+SdeFBvtyEkXs7REEP0seUULqWtbJapLOCVDaaPEHmU=
 github.com/json-iterator/go v1.1.7/go.mod h1:KdQUCv79m/52Kvf8AW2vK1V8akMuk1QjK/uOdHXbAo4=
 github.com/julienschmidt/httprouter v1.2.0/go.mod h1:SYymIcj16QtmaHHD7aYtjjsJG7VTCxuUUipMqKk8s4w=
