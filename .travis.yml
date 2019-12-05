@@ -1,0 +1,5 @@
+language: go
+go: ["1.13"]
+script: |
+  echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+  make all
