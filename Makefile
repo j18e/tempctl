@@ -3,7 +3,7 @@ IMAGE_NAME := j18e/tempctl
 IMAGE_FULL := $(IMAGE_NAME):$(COMMIT_HASH)
 
 build:
-	GOOS=linux go build -o ./tempctl main.go
+	GOOS=linux GOARCH=386 go build -o ./tempctl main.go
 
 docker-build:
 	docker build -t $(IMAGE_FULL) .
