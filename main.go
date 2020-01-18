@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -12,6 +13,7 @@ import (
 
 	"github.com/ghodss/yaml"
 	"github.com/jessevdk/go-flags"
+	"github.com/oklog/run"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -54,39 +56,39 @@ func main() {
 	}
 	defer stor.Close()
 
+	var g run.Group
+
 	// initialize rooms
 	for _, r := range rooms {
-		r.Storage = stor
-		if err := r.Init(); err != nil {
+		room := r
+		room.Storage = stor
+		if err := room.Init(); err != nil {
 			log.Fatal(err)
 		}
+
+		ctx, cancel := context.WithCancel(context.Background())
+		ticker := time.NewTicker(time.Duration(opts.SyncFreq) * time.Second)
+		g.Add(
+			func() error {
+				for {
+					select {
+					case <-ctx.Done():
+						return ctx.Err()
+					case <-ticker.C:
+						if err := room.Check(); err != nil {
+							log.Errorf("checking %s: %v", room.Name, err)
+						}
+					}
+				}
+			},
+			func(error) {
+				cancel()
+			},
+		)
 	}
 	log.Infof("initialized %d rooms", len(rooms))
 
-	for {
-		checkRooms(rooms)
-		time.Sleep(time.Duration(opts.SyncFreq) * time.Second)
-	}
-}
-
-func checkRooms(rooms []*room.Room) {
-	errChan := make(chan error, len(rooms))
-	defer close(errChan)
-	for _, r := range rooms {
-		go func(r *room.Room) {
-			if err := r.Check(); err != nil {
-				errChan <- fmt.Errorf("checking %s: %w", r.Name, err)
-				return
-			}
-			errChan <- nil
-		}(r)
-	}
-
-	for range rooms {
-		if err := <-errChan; err != nil {
-			log.Errorf(err.Error())
-		}
-	}
+	log.Info(g.Run())
 }
 
 func config(file string) ([]*room.Room, error) {
@@ -108,23 +110,28 @@ func config(file string) ([]*room.Room, error) {
 
 	bs, err := ioutil.ReadFile(file)
 	if err != nil {
-		return rooms, fmt.Errorf("reading file: %w", err)
+		return nil, fmt.Errorf("reading file: %w", err)
 	}
 
 	if err := yaml.Unmarshal(bs, &conf); err != nil {
-		return rooms, fmt.Errorf("unmarshaling file: %w", err)
+		return nil, fmt.Errorf("unmarshaling file: %w", err)
+	}
+
+	var users []*models.User
+	for name, mac := range conf.Users {
+		users = append(users, &models.User{Name: name, MAC: mac})
 	}
 
 	for _, rc := range conf.Rooms {
 		// parse start and stop times
 		startTime, err := time.Parse(timeFormat, rc.StartTime)
 		if err != nil {
-			return rooms, fmt.Errorf("room %s: parsing start time: %w", rc.Name, err)
+			return nil, fmt.Errorf("room %s: parsing start time: %w", rc.Name, err)
 		}
 		startDur := time.Hour*time.Duration(startTime.Hour()) + time.Minute*time.Duration(startTime.Minute())
 		stopTime, err := time.Parse(timeFormat, rc.StopTime)
 		if err != nil {
-			return rooms, fmt.Errorf("room %s: parsing stop time: %w", rc.Name, err)
+			return nil, fmt.Errorf("room %s: parsing stop time: %w", rc.Name, err)
 		}
 		stopDur := time.Hour*time.Duration(stopTime.Hour()) + time.Minute*time.Duration(stopTime.Minute())
 
@@ -132,7 +139,7 @@ func config(file string) ([]*room.Room, error) {
 		users := make([]*models.User, len(rc.Occupants))
 		for i, name := range rc.Occupants {
 			if _, ok := conf.Users[name]; !ok {
-				return rooms, fmt.Errorf("room %s: no such user %s", rc.Name, name)
+				return nil, fmt.Errorf("room %s: no such user %s", rc.Name, name)
 			}
 			users[i] = &models.User{Name: name, MAC: conf.Users[name]}
 		}

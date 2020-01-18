@@ -63,6 +63,9 @@ func (r *Room) Check() error {
 			log.Infof("room %s: cooling", r.Name)
 			r.plug.Off()
 		}
+		if err := r.Storage.WriteHeatingStatus(r.Name, action); err != nil {
+			log.Warnf("room %s: writing heating event: %v", r.Name, err)
+		}
 	}()
 
 	// only run loop during active hours

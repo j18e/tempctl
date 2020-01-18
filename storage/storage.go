@@ -13,7 +13,7 @@ type Storage interface {
 	// WriteHeatingStatus writes the current status of a room's heater to the
 	// storage.  0 indicates not heating, 1 indicates heating and -1 indicates
 	// an error communicating with the heater.
-	WriteHeatingStatus(string, int) error
+	WriteHeatingStatus(string, bool) error
 
 	Close() error
 }
