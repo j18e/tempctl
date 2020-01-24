@@ -84,7 +84,11 @@ func (s *influxStorage) WriteHeatingStatus(room string, status bool) error {
 
 	// define fields, tags
 	tags := map[string]string{"room": room}
-	fields := map[string]interface{}{"heating": status}
+	code := 0
+	if status {
+		code = 1
+	}
+	fields := map[string]interface{}{"heating": status, "code": code}
 
 	// create batch point
 	bp, err := influx.NewBatchPoints(influx.BatchPointsConfig{Database: s.dbName, Precision: "s"})
