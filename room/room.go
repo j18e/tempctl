@@ -29,11 +29,7 @@ func (r *Room) Init() error {
 	}
 
 	// init plug
-	plug, err := hs110.NewPlug(r.PlugAddr)
-	if err != nil {
-		return fmt.Errorf("initializing plug: %w", err)
-	}
-	r.plug = plug
+	r.plug = hs110.NewPlug(r.PlugAddr)
 
 	// check start and stop times
 	if r.StartTime > r.StopTime {
@@ -44,39 +40,26 @@ func (r *Room) Init() error {
 		return fmt.Errorf("StartTime must be >= 0")
 	}
 
-	// check users
-	if len(r.Users) < 1 {
-		return fmt.Errorf("at least one user is required")
-	}
-
 	return nil
 }
 
 func (r *Room) Check() error {
-	// apply action before returning
-	action := false
-	defer func() {
-		if action {
-			log.Infof("room %s: heating", r.Name)
-			r.plug.On()
-		} else {
-			log.Infof("room %s: cooling", r.Name)
-			r.plug.Off()
-		}
-		if err := r.Storage.WriteHeatingStatus(r.Name, action); err != nil {
-			log.Warnf("room %s: writing heating event: %v", r.Name, err)
-		}
-	}()
-
 	// only run loop during active hours
 	if !r.activeHours() {
+		r.Cool()
 		return nil
 	}
 
 	// check if someone's home
-	someoneHome, err := r.Storage.SomeonePresent(r.Users)
-	if err != nil {
-		return fmt.Errorf("checking for present user: %w", err)
+	var someoneHome bool
+	if len(r.Users) == 0 {
+		someoneHome = true
+	} else {
+		var err error
+		someoneHome, err = r.Storage.SomeonePresent(r.Users)
+		if err != nil {
+			return fmt.Errorf("checking for present user: %w", err)
+		}
 	}
 
 	// turn off the plug if we can't get the current temp
@@ -87,15 +70,43 @@ func (r *Room) Check() error {
 
 	// start heating if someone's home and it's too cold
 	if someoneHome && temp < r.TargetTemp {
-		action = true
+		r.Heat()
+		return nil
 	}
 
+	r.Cool()
 	return nil
+}
+
+func (r *Room) Heat() {
+	if err := r.plug.On(); err != nil {
+		log.Warnf("heat room %s: %v", r.Name, err)
+	} else {
+		log.Infof("room %s: heating", r.Name)
+	}
+	if err := r.Storage.WriteHeatingStatus(r.Name, true); err != nil {
+		log.Warnf("room %s: writing heating event: %v", r.Name, err)
+	}
+}
+
+func (r *Room) Cool() {
+	if err := r.plug.Off(); err != nil {
+		log.Warnf("cool room %s: %v", r.Name, err)
+	} else {
+		log.Infof("room %s: cooling", r.Name)
+	}
+	if err := r.Storage.WriteHeatingStatus(r.Name, false); err != nil {
+		log.Warnf("room %s: writing heating event: %v", r.Name, err)
+	}
 }
 
 // ActiveHours reports whether the room is currently inside its configured
 // active hours.
 func (r *Room) activeHours() bool {
+	if r.StartTime == 0 && r.StopTime == 0 {
+		return true
+	}
+
 	t := time.Now()
 	now := time.Hour*time.Duration(t.Hour()) + time.Minute*time.Duration(t.Minute())
 

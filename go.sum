@@ -27,8 +27,8 @@ github.com/google/go-cmp v0.3.0/go.mod h1:8QqcDgzrUqlUb/G2PQTWiueGozuR1884gddMyw
 github.com/google/gofuzz v1.0.0/go.mod h1:dBl0BpW6vV/+mYPU4Po3pmUjxk6FQPldtuIdl/M65Eg=
 github.com/influxdata/influxdb1-client v0.0.0-20190809212627-fc22c7df067e h1:txQltCyjXAqVVSZDArPEhUTg35hKwVIuXwtQo7eAMNQ=
 github.com/influxdata/influxdb1-client v0.0.0-20190809212627-fc22c7df067e/go.mod h1:qj24IKcXYK6Iy9ceXlo3Tc+vtHo9lIhSX5JddghvEPo=
-github.com/j18e/hs110 v0.0.0-20191112175551-a18968a69d60 h1:kPYbI0rUv4aG2Kda/HTtjNKH2/Av5BC2Hdx1nwLE4rI=
-github.com/j18e/hs110 v0.0.0-20191112175551-a18968a69d60/go.mod h1:tbrmuwl6i9AVpZ+vWwMT+E8f22QIDR3U/BTXAK3TY7Q=
+github.com/j18e/hs110 v0.0.0-20210118143451-1dcaec40781c h1:SC62SMKTQO722XITBJAmdTS795KnURn05TqSAIdhxuo=
+github.com/j18e/hs110 v0.0.0-20210118143451-1dcaec40781c/go.mod h1:tbrmuwl6i9AVpZ+vWwMT+E8f22QIDR3U/BTXAK3TY7Q=
 github.com/j18e/unifi-exporter v0.0.0-20191112082528-5174b61082e7 h1:uGpR9buOk/C7ptHNih1yYgi6TSCBL7PoV6D7jkdSoD8=
 github.com/j18e/unifi-exporter/unifi v0.0.0-20191112082528-5174b61082e7 h1:Xz/hj3LPp2dAZIkLWhgvJ8atfAZJYLgh6e+QvNEDj4E=
 github.com/j18e/unifi-exporter/unifi v0.0.0-20191112082528-5174b61082e7/go.mod h1:fJPb3UTvlQRNBR3F52CeCSacWGO2GwM1nh2jd2wdgKU=

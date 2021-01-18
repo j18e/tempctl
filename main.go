@@ -29,9 +29,11 @@ func main() {
 	_, err := flags.Parse(&opts)
 	if flags.WroteHelp(err) {
 		os.Exit(0) // exit with zero status if help was called
-	} else if _, ok := err.(*flags.Error); ok {
+	}
+	if _, ok := err.(*flags.Error); ok {
 		os.Exit(1) // if it's a flags.Error the output is already printed
-	} else if err != nil {
+	}
+	if err != nil {
 		log.Fatal(err)
 	}
 
@@ -87,6 +89,8 @@ func main() {
 		)
 	}
 	log.Infof("initialized %d rooms", len(rooms))
+
+	g.Add(run.SignalHandler(context.Background(), os.Interrupt))
 
 	log.Info(g.Run())
 }
